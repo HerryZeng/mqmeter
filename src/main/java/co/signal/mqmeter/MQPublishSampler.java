@@ -85,6 +85,36 @@ public class MQPublishSampler extends AbstractJavaSamplerClient {
     private static final String PARAMETER_MQ_PORT = "mq_port";
 
     /**
+     * Parameter for enabling SSL connection.
+     */
+    private static final String PARAMETER_MQ_SSL_ENABLE = "mq_ssl_enable";
+
+    /**
+     * Parameter for SSL keystore path.
+     */
+    private static final String PARAMETER_MQ_SSL_KEYSTORE_PATH = "mq_ssl_keystore_path";
+
+    /**
+     * Parameter for SSL keystore password.
+     */
+    private static final String PARAMETER_MQ_SSL_KEYSTORE_PASSWORD = "mq_ssl_keystore_password";
+
+    /**
+     * Parameter for SSL truststore path.
+     */
+    private static final String PARAMETER_MQ_SSL_TRUSTSTORE_PATH = "mq_ssl_truststore_path";
+
+    /**
+     * Parameter for SSL truststore password.
+     */
+    private static final String PARAMETER_MQ_SSL_TRUSTSTORE_PASSWORD = "mq_ssl_truststore_password";
+
+    /**
+     * Parameter for SSL cipher suite (algorithm).
+     */
+    private static final String PARAMETER_MQ_SSL_CIPHER_SUITE = "mq_ssl_cipher_suite";
+
+    /**
      * Parameter for setting MQ Message.
      */
     private static final String PARAMETER_MQ_MESSAGE = "mq_message";
@@ -128,6 +158,12 @@ public class MQPublishSampler extends AbstractJavaSamplerClient {
         defaultParameter.addArgument(PARAMETER_MQ_ENCODING_MESSAGE, "${MQ_ENCODING_MESSAGE}");
         defaultParameter.addArgument(PARAMETER_MQ_MESSAGE, "${MQ_MESSAGE}");
         defaultParameter.addArgument(PARAMETER_MQ_HEADER, "${MQ_HEADER}");
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_ENABLE, "false");
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_KEYSTORE_PATH, "");
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_KEYSTORE_PASSWORD, "");
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_TRUSTSTORE_PATH, "");
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_TRUSTSTORE_PASSWORD, "");
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_CIPHER_SUITE, "");
         return defaultParameter;
     }
 
@@ -162,6 +198,37 @@ public class MQPublishSampler extends AbstractJavaSamplerClient {
         String password = context.getParameter(PARAMETER_MQ_USER_PASSWORD);
         if( password != null && !password.isEmpty() )
             properties.put(MQConstants.PASSWORD_PROPERTY, password);
+
+        // SSL Configuration
+        String sslEnable = context.getParameter(PARAMETER_MQ_SSL_ENABLE);
+        if (sslEnable != null && sslEnable.equalsIgnoreCase("true")) {
+            String keystorePath = context.getParameter(PARAMETER_MQ_SSL_KEYSTORE_PATH);
+            String keystorePassword = context.getParameter(PARAMETER_MQ_SSL_KEYSTORE_PASSWORD);
+            String truststorePath = context.getParameter(PARAMETER_MQ_SSL_TRUSTSTORE_PATH);
+            String truststorePassword = context.getParameter(PARAMETER_MQ_SSL_TRUSTSTORE_PASSWORD);
+            String cipherSuite = context.getParameter(PARAMETER_MQ_SSL_CIPHER_SUITE);
+
+            // Set system properties for SSL
+            if (keystorePath != null && !keystorePath.isEmpty()) {
+                System.setProperty("javax.net.ssl.keyStore", keystorePath);
+                if (keystorePassword != null && !keystorePassword.isEmpty()) {
+                    System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
+                }
+            }
+            if (truststorePath != null && !truststorePath.isEmpty()) {
+                System.setProperty("javax.net.ssl.trustStore", truststorePath);
+                if (truststorePassword != null && !truststorePassword.isEmpty()) {
+                    System.setProperty("javax.net.ssl.trustStorePassword", truststorePassword);
+                }
+            }
+
+            // Set SSL cipher suite if provided
+            if (cipherSuite != null && !cipherSuite.isEmpty()) {
+                properties.put(MQConstants.SSL_CIPHER_SUITE_PROPERTY, cipherSuite);
+            }
+
+            log.info("SSL enabled for MQ connection");
+        }
 
         log.info("MQ Manager properties are hostname: " + properties.get(MQConstants.HOST_NAME_PROPERTY) + " port: " +
                 properties.get(MQConstants.PORT_PROPERTY) + " channel: " + properties.get(MQConstants.CHANNEL_PROPERTY));

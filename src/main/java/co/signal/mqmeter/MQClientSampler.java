@@ -23,6 +23,8 @@ import static com.ibm.mq.constants.CMQC.MQOO_OUTPUT;
 import static com.ibm.mq.constants.CMQC.PASSWORD_PROPERTY;
 import static com.ibm.mq.constants.CMQC.PORT_PROPERTY;
 import static com.ibm.mq.constants.CMQC.USER_ID_PROPERTY;
+import static com.ibm.mq.constants.CMQC.SSL_CIPHER_SUITE_PROPERTY;
+import static com.ibm.mq.constants.CMQC.SSL_PEER_NAME_PROPERTY;
 import static java.lang.String.*;
 
 import java.io.IOException;
@@ -149,6 +151,36 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
     public static final String MQ_MESSAGE_FORMAT = "${MQ_MESSAGE_FORMAT}";
 
     /**
+     * Parameter for enabling SSL connection.
+     */
+    private static final String PARAMETER_MQ_SSL_ENABLE = "mq_ssl_enable";
+
+    /**
+     * Parameter for SSL keystore path.
+     */
+    private static final String PARAMETER_MQ_SSL_KEYSTORE_PATH = "mq_ssl_keystore_path";
+
+    /**
+     * Parameter for SSL keystore password.
+     */
+    private static final String PARAMETER_MQ_SSL_KEYSTORE_PASSWORD = "mq_ssl_keystore_password";
+
+    /**
+     * Parameter for SSL truststore path.
+     */
+    private static final String PARAMETER_MQ_SSL_TRUSTSTORE_PATH = "mq_ssl_truststore_path";
+
+    /**
+     * Parameter for SSL truststore password.
+     */
+    private static final String PARAMETER_MQ_SSL_TRUSTSTORE_PASSWORD = "mq_ssl_truststore_password";
+
+    /**
+     * Parameter for SSL cipher suite (algorithm).
+     */
+    private static final String PARAMETER_MQ_SSL_CIPHER_SUITE = "mq_ssl_cipher_suite";
+
+    /**
      * Parameter for encoding.
      */
     private static final String ENCODING = "UTF-8";
@@ -255,6 +287,12 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
         defaultParameter.addArgument(PARAMETER_MQ_MESSAGE, MQ_MESSAGE);
         defaultParameter.addArgument(PARAMETER_MQ_HEADER, MQ_HEADER);
         defaultParameter.addArgument(PARAMETER_MQ_MESSAGE_FORMAT, MQ_MESSAGE_FORMAT);
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_ENABLE, "false");
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_KEYSTORE_PATH, EMPTY);
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_KEYSTORE_PASSWORD, EMPTY);
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_TRUSTSTORE_PATH, EMPTY);
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_TRUSTSTORE_PASSWORD, EMPTY);
+        defaultParameter.addArgument(PARAMETER_MQ_SSL_CIPHER_SUITE, EMPTY);
         return defaultParameter;
     }
 
@@ -279,6 +317,37 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
         String password = context.getParameter(PARAMETER_MQ_USER_PASSWORD);
         if ( password != null && !password.isEmpty()) {
             properties.put(PASSWORD_PROPERTY, password);
+        }
+
+        // SSL Configuration
+        String sslEnable = context.getParameter(PARAMETER_MQ_SSL_ENABLE);
+        if (sslEnable != null && sslEnable.equalsIgnoreCase("true")) {
+            String keystorePath = context.getParameter(PARAMETER_MQ_SSL_KEYSTORE_PATH);
+            String keystorePassword = context.getParameter(PARAMETER_MQ_SSL_KEYSTORE_PASSWORD);
+            String truststorePath = context.getParameter(PARAMETER_MQ_SSL_TRUSTSTORE_PATH);
+            String truststorePassword = context.getParameter(PARAMETER_MQ_SSL_TRUSTSTORE_PASSWORD);
+            String cipherSuite = context.getParameter(PARAMETER_MQ_SSL_CIPHER_SUITE);
+
+            // Set system properties for SSL
+            if (keystorePath != null && !keystorePath.isEmpty()) {
+                System.setProperty("javax.net.ssl.keyStore", keystorePath);
+                if (keystorePassword != null && !keystorePassword.isEmpty()) {
+                    System.setProperty("javax.net.ssl.keyStorePassword", keystorePassword);
+                }
+            }
+            if (truststorePath != null && !truststorePath.isEmpty()) {
+                System.setProperty("javax.net.ssl.trustStore", truststorePath);
+                if (truststorePassword != null && !truststorePassword.isEmpty()) {
+                    System.setProperty("javax.net.ssl.trustStorePassword", truststorePassword);
+                }
+            }
+
+            // Set SSL cipher suite if provided
+            if (cipherSuite != null && !cipherSuite.isEmpty()) {
+                properties.put(SSL_CIPHER_SUITE_PROPERTY, cipherSuite);
+            }
+
+            log.info("SSL enabled for MQ connection");
         }
 
         encodingMessage = context.getParameter(PARAMETER_MQ_ENCODING_MESSAGE);

@@ -40,9 +40,15 @@ Use it to put and get message (optional) on MQ queue. On JMeter add a Java Reque
 * **mq_encoding_message**: Character encoding standard for your message: For EBCDIC put Cp1047. ASCII just put ASCII.
 * **mq_message**: The content of the message that you want.
 * **mq_headers**: The format is `key1=value1,key2=value2`.
-*  **mq_message_format**: MQMD Message [Format](https://www.ibm.com/support/knowledgecenter/SSFKSJ_7.5.0/com.ibm.mq.ref.dev.doc/q097520_.htm).
+* **mq_message_format**: MQMD Message [Format](https://www.ibm.com/support/knowledgecenter/SSFKSJ_7.5.0/com.ibm.mq.ref.dev.doc/q097520_.htm).
    You can set one of the values in constants [CMQC.MQFMT_*](https://www.ibm.com/support/knowledgecenter/SSFKSJ_7.5.0/com.ibm.mq.javadoc.doc/WMQJavaClasses/constant-values.html#com.ibm.mq.constants.CMQC.MQFMT_STRING).
    For example, the value of constant `CMQC.MQFMT_STRING` - `MQSTR `.
+* **mq_ssl_enable**: Set to `true` to enable SSL/TLS connection to MQ Server. Default is `false`.
+* **mq_ssl_keystore_path**: Path to the SSL keystore file (JKS or PKCS12 format). Required for mutual SSL authentication (client certificate). Leave empty if not needed.
+* **mq_ssl_keystore_password**: Password for the SSL keystore. Leave empty if keystore path is not set.
+* **mq_ssl_truststore_path**: Path to the SSL truststore file (JKS or PKCS12 format). Required to verify the MQ server certificate. For one-way SSL, only this parameter is needed.
+* **mq_ssl_truststore_password**: Password for the SSL truststore. Leave empty if truststore path is not set.
+* **mq_ssl_cipher_suite**: SSL/TLS cipher suite (algorithm) to use for the connection. Must match the CipherSpec configured on the MQ server channel. Examples: `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA256`, `ECDHE_RSA_AES_128_CBC_SHA256`.
 
 #### Put & Get Message on Queue
 
@@ -66,8 +72,48 @@ On JMeter add a Java Request Sampler and select the `MQPublishSampler` class nam
 * **mq_user_password**: The user password to connect to MQ server channel. Leave it empty if you don't need user id and password to connect to MQ.
 * **mq_encoding_message**: Character encoding standard for your message: For EBCDIC put Cp1047. ASCII just put ASCII.
 * **mq_message**: The content of the message that you want.
+* **mq_ssl_enable**: Set to `true` to enable SSL/TLS connection to MQ Server. Default is `false`.
+* **mq_ssl_keystore_path**: Path to the SSL keystore file (JKS or PKCS12 format). Required for mutual SSL authentication (client certificate). Leave empty if not needed.
+* **mq_ssl_keystore_password**: Password for the SSL keystore. Leave empty if keystore path is not set.
+* **mq_ssl_truststore_path**: Path to the SSL truststore file (JKS or PKCS12 format). Required to verify the MQ server certificate. For one-way SSL, only this parameter is needed.
+* **mq_ssl_truststore_password**: Password for the SSL truststore. Leave empty if truststore path is not set.
+* **mq_ssl_cipher_suite**: SSL/TLS cipher suite (algorithm) to use for the connection. Must match the CipherSpec configured on the MQ server channel. Examples: `TLS_RSA_WITH_AES_128_CBC_SHA256`, `TLS_RSA_WITH_AES_256_CBC_SHA256`, `ECDHE_RSA_AES_128_CBC_SHA256`.
 
 ![Screenshot](https://github.com/JoseLuisSR/mqmeter/blob/develop/doc/img/PublishMessageOnTopic.png?raw=true)
+
+## SSL Configuration
+
+The following table explains the relationship between `mq_ssl_keystore_path` and `mq_ssl_truststore_path` parameters:
+
+| Scenario | Configuration Required |
+|----------|----------------------|
+| **One-way SSL** (Server authentication only) | Only `mq_ssl_truststore_path` is required. This truststore should contain the MQ server's certificate or the CA certificate that signed it. |
+| **Two-way SSL** (Mutual authentication) | Both `mq_ssl_keystore_path` and `mq_ssl_truststore_path` are required. The keystore contains the client certificate for authentication, and the truststore contains the server's certificate for verification. |
+
+### SSL Configuration Examples
+
+**One-way SSL (most common):**
+```
+mq_ssl_enable=true
+mq_ssl_truststore_path=/path/to/truststore.jks
+mq_ssl_truststore_password=changeit
+mq_ssl_cipher_suite=TLS_RSA_WITH_AES_128_CBC_SHA256
+```
+
+**Two-way SSL (mutual authentication):**
+```
+mq_ssl_enable=true
+mq_ssl_keystore_path=/path/to/keystore.jks
+mq_ssl_keystore_password=changeit
+mq_ssl_truststore_path=/path/to/truststore.jks
+mq_ssl_truststore_password=changeit
+mq_ssl_cipher_suite=TLS_RSA_WITH_AES_128_CBC_SHA256
+```
+
+**Note:** The `mq_ssl_cipher_suite` value must match the CipherSpec configured on the MQ server channel. Common values include:
+- `TLS_RSA_WITH_AES_128_CBC_SHA256`
+- `TLS_RSA_WITH_AES_256_CBC_SHA256`
+- `ECDHE_RSA_AES_128_CBC_SHA256`
 
 ## IBM WebSphere MQ
 
