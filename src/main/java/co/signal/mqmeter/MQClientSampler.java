@@ -139,6 +139,16 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
     private static final String PARAMETER_MQ_WAIT_INTERVAL = "mq_wait_interval";
 
     /**
+     * Parameter for setting MQ Message Format.
+     */
+    private static final String PARAMETER_MQ_MESSAGE_FORMAT = "mq_message_format";
+
+    /**
+     * MQ Manager variable
+     */
+    public static final String MQ_MESSAGE_FORMAT = "${MQ_MESSAGE_FORMAT}";
+
+    /**
      * Parameter for encoding.
      */
     private static final String ENCODING = "UTF-8";
@@ -194,6 +204,11 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
     private static final String PARAMETER_MQ_HEADER = "mq_headers";
 
     /**
+     * Message Payload to send
+     */
+    public static final String MQ_HEADER = "${MQ_HEADER}";
+
+    /**
      * MQQueueManager variable.
      */
     private MQQueueManager mqMgr;
@@ -238,7 +253,8 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
         defaultParameter.addArgument(PARAMETER_MQ_MESSAGE_TYPE, DEFAULT_MESSAGE_TYPE);
         defaultParameter.addArgument(PARAMETER_MQ_ENCODING_MESSAGE, MQ_ENCODING_MESSAGE);
         defaultParameter.addArgument(PARAMETER_MQ_MESSAGE, MQ_MESSAGE);
-        defaultParameter.addArgument(PARAMETER_MQ_HEADER, "${MQ_HEADER}");
+        defaultParameter.addArgument(PARAMETER_MQ_HEADER, MQ_HEADER);
+        defaultParameter.addArgument(PARAMETER_MQ_MESSAGE_FORMAT, MQ_MESSAGE_FORMAT);
         return defaultParameter;
     }
 
@@ -256,12 +272,14 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
         properties.put(CHANNEL_PROPERTY, context.getParameter(PARAMETER_MQ_CHANNEL));
 
         String userID = context.getParameter(PARAMETER_MQ_USER_ID);
-        if ( userID != null && !userID.isEmpty())
+        if ( userID != null && !userID.isEmpty()) {
             properties.put(USER_ID_PROPERTY, userID);
+        }
 
         String password = context.getParameter(PARAMETER_MQ_USER_PASSWORD);
-        if ( password != null && !password.isEmpty())
+        if ( password != null && !password.isEmpty()) {
             properties.put(PASSWORD_PROPERTY, password);
+        }
 
         encodingMessage = context.getParameter(PARAMETER_MQ_ENCODING_MESSAGE);
         messageType = context.getParameter(PARAMETER_MQ_MESSAGE_TYPE);
@@ -347,9 +365,18 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
         byte[] messageId = {};
 
         String headers = context.getParameter(PARAMETER_MQ_HEADER);
+        String messageFormat = context.getParameter(PARAMETER_MQ_MESSAGE_FORMAT);
+
 
         try{
             MQMessage mqMessage = writeMessage(message);
+            if (!"${MQ_MESSAGE_FORMAT}".equals(messageFormat) && !"null".equals(messageFormat)) {
+                log.info("Setting message format to {}", messageFormat);
+                mqMessage.format = messageFormat;
+            }
+            if (!"${MQ_HEADER}".equals(headers) && !"null".equals(headers)) {
+                log.info("Setting message header to {}", headers);
+            }
             for(String header : headers.split(",")) {
                 String[] keyValue = header.split(":");
                 mqMessage.setStringProperty(keyValue[0], keyValue[1]);
@@ -500,10 +527,11 @@ public class MQClientSampler extends AbstractJavaSamplerClient {
         result.sampleEnd();
         result.setSuccessful(true);
         result.setResponseCodeOK();
-        if (response != null)
+        if (response != null) {
             result.setResponseData(response, ENCODING);
-        else
+        } else {
             result.setResponseData("No response required", ENCODING);
+        }
     }
 
     /**
